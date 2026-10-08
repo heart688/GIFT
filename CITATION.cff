@@ -1,0 +1,9 @@
+cff-version: 1.2.0
+message: "Please cite this software and the GIFT paper when bibliographic details become available."
+title: "GIFT reproducibility code"
+type: software
+authors:
+  - name: "GIFT contributors"
+version: 0.1.0
+date-released: 2026-10-08
+license: MIT

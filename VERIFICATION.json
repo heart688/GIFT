@@ -1,0 +1,37 @@
+{
+  "release": "0.1.0",
+  "model_reference_sha256": "16629612a981d53daeda3ab7be4d61ddd21f08b635b085b2e52a953ba4b03f5c",
+  "tested_environment": {
+    "python": "3.9.6",
+    "platform": "Darwin",
+    "machine": "arm64",
+    "torch": "2.1.2",
+    "numpy": "1.26.4",
+    "device": "cpu"
+  },
+  "checks": {
+    "model_combinations": 32,
+    "parameter_policy_audits": 216,
+    "paired_optimizer_updates": 64,
+    "initialization_tensor_equality": true,
+    "forward_auxiliary_gradients": true,
+    "frozen_parameters_preserved": true,
+    "unit_tests": 7,
+    "data_pipeline_equivalence_horizons": [
+      6,
+      12
+    ],
+    "expected_mean_sd_groups": 36,
+    "actual_seed_metric_records": 180,
+    "cli_help_entries": 4,
+    "cli_npy_conversion": true,
+    "cli_source_training": true,
+    "cli_target_adaptation": true,
+    "cli_target_evaluation": true,
+    "cli_zero_day_evaluation": true,
+    "private_path_and_server_address_scan": "passed",
+    "optional_reference_tests": 2,
+    "combined_run_tests": 9
+  },
+  "scope": "Synthetic CPU release checks and extraction equivalence; recorded full-budget GPU metrics are provided as CSV. No full-budget experiment was rerun for packaging."
+}

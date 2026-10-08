@@ -1,0 +1,3 @@
+# Optional, only for converting DCRNN .h5 files.
+pandas==2.1.4
+tables==3.9.2

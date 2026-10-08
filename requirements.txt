@@ -1,0 +1,4 @@
+# Reference training used Python 3.10.8 / PyTorch 2.1.2+cu121.
+# NumPy 1.26.4 is the portable release's verification environment.
+torch==2.1.2
+numpy==1.26.4

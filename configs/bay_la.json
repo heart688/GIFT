@@ -1,0 +1,46 @@
+{
+  "direction": "BAY_LA",
+  "source": "pems-bay",
+  "target": "metr-la",
+  "horizon": 12,
+  "variant": "GIFT_CE",
+  "seeds": [
+    0,
+    1,
+    2,
+    3,
+    4
+  ],
+  "support_days": [
+    0,
+    2
+  ],
+  "test_after_day": 2,
+  "source_updates": 227800,
+  "target_updates": 1700,
+  "model": {
+    "history_length": 12,
+    "width": 128,
+    "rank": 16,
+    "blocks": 3,
+    "ffn_width": 256,
+    "dropout": 0.1
+  },
+  "history_auxiliary_weight": 0.1,
+  "source_training": {
+    "fraction": 0.7,
+    "epochs": 100,
+    "batch_size": 16,
+    "learning_rate": 0.001,
+    "weight_decay": 0.0001,
+    "grad_clip": 5
+  },
+  "adaptation": {
+    "policy": "DEFAULT_CE",
+    "epochs": 50,
+    "batch_size": 16,
+    "learning_rate": 0.0001,
+    "weight_decay": 0.0001,
+    "grad_clip": 5
+  }
+}
