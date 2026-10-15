@@ -1,11 +1,5 @@
-"""Public GIFT model API, extracted from the local frozen WWW experiment."""
+"""GIFT traffic forecasting model and reproducibility pipeline."""
 
-from .models import (
-    ALIASES, VARIANTS, WWWForecaster, build, communication_roles,
-    configure_policy, parameter_audit,
-)
+from .model import GIFT
 
-__all__ = [
-    "ALIASES", "VARIANTS", "WWWForecaster", "build", "communication_roles",
-    "configure_policy", "parameter_audit",
-]
+__all__ = ["GIFT"]

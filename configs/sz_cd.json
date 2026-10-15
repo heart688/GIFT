@@ -3,7 +3,6 @@
   "source": "shenzhen",
   "target": "chengdu",
   "horizon": 6,
-  "variant": "GIFT_CE",
   "seeds": [
     0,
     1,
@@ -36,7 +35,6 @@
     "grad_clip": 5
   },
   "adaptation": {
-    "policy": "DEFAULT_CE",
     "epochs": 50,
     "batch_size": 16,
     "learning_rate": 0.0001,

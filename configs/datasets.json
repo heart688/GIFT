@@ -3,7 +3,6 @@
   "cities": {
     "metr-la": {
       "series_file": "metr-la/dataset.npy",
-      "graph_file": "metr-la/matrix.npy",
       "expected_shape": [
         34272,
         207,
@@ -12,17 +11,10 @@
       "interval_minutes": 5,
       "steps_per_day": 288,
       "speed_channel": 0,
-      "time_of_day_channel": 1,
-      "time_index_channel": null,
-      "series_sha256": "00406b77b1c062cb3688c29c3a8aa18ae387b2f7cd2c92716a54df4807d584f1",
-      "graph_sha256": "e87344b0a792e1eb5ff884e892ffbfbdd642fbb66c56fd739fd271a55279f825",
-      "graph_semantics": "affinity",
-      "graph_transform": "existing_self_loop_row_normalize",
-      "directed": true
+      "series_sha256": "00406b77b1c062cb3688c29c3a8aa18ae387b2f7cd2c92716a54df4807d584f1"
     },
     "pems-bay": {
       "series_file": "pems-bay/dataset.npy",
-      "graph_file": "pems-bay/matrix.npy",
       "expected_shape": [
         52116,
         325,
@@ -31,17 +23,10 @@
       "interval_minutes": 5,
       "steps_per_day": 288,
       "speed_channel": 0,
-      "time_of_day_channel": 1,
-      "time_index_channel": null,
-      "series_sha256": "147d7dad50580d4918543371d0037b1e53ac93cf720b26423eaadbf20be24b94",
-      "graph_sha256": "48c0db6121f4358ec9c5552e48cad7e95d1243766a8614b73fd86ce0aeef44ad",
-      "graph_semantics": "affinity",
-      "graph_transform": "existing_self_loop_row_normalize",
-      "directed": true
+      "series_sha256": "147d7dad50580d4918543371d0037b1e53ac93cf720b26423eaadbf20be24b94"
     },
     "chengdu": {
       "series_file": "chengdu/dataset.npy",
-      "graph_file": "chengdu/matrix.npy",
       "expected_shape": [
         17280,
         524,
@@ -50,17 +35,10 @@
       "interval_minutes": 10,
       "steps_per_day": 144,
       "speed_channel": 0,
-      "time_of_day_channel": 1,
-      "time_index_channel": null,
-      "series_sha256": "a7e3a917f86edb2ce7ecf49f1d1aff7f16f104addb924625bb06a84c865b0df4",
-      "graph_sha256": "3ef5fd75b76a090f498b4eec6284486be8b2afdd524dcb02b2f65df9ab4ef716",
-      "graph_semantics": "affinity",
-      "graph_transform": "existing_self_loop_row_normalize",
-      "directed": true
+      "series_sha256": "a7e3a917f86edb2ce7ecf49f1d1aff7f16f104addb924625bb06a84c865b0df4"
     },
     "shenzhen": {
       "series_file": "shenzhen/dataset.npy",
-      "graph_file": "shenzhen/matrix.npy",
       "expected_shape": [
         17280,
         627,
@@ -69,13 +47,7 @@
       "interval_minutes": 10,
       "steps_per_day": 144,
       "speed_channel": 0,
-      "time_of_day_channel": 1,
-      "time_index_channel": null,
-      "series_sha256": "367dc45d88f6eef4bd51c96cbba38efbe1293a02186db446be8fb91df93f4ea9",
-      "graph_sha256": "3d8de0c48f30c1205b484f21527a44d6a34fd4883f487bfc8058986023968745",
-      "graph_semantics": "affinity",
-      "graph_transform": "existing_self_loop_row_normalize",
-      "directed": false
+      "series_sha256": "367dc45d88f6eef4bd51c96cbba38efbe1293a02186db446be8fb91df93f4ea9"
     }
   }
 }

@@ -9,8 +9,8 @@ from pathlib import Path
 import numpy as np
 import torch
 from torch.utils.data import DataLoader
-from . import models
-from .data import datasets, file_sha256, graph_for
+from .model import GIFT
+from .data import datasets, file_sha256
 from .metrics import MetricAccumulator
 
 
@@ -42,15 +42,13 @@ def restore_rng(state):
     if torch.cuda.is_available() and state['cuda']: torch.cuda.set_rng_state_all(state['cuda'])
 
 
-def make_model(config, seed, device, data_root, stage, verify=True):
+def make_model(config, seed, device, data_root=None, stage=None, verify=True):
     spec = config['model']
     if spec['history_length'] != 12 or spec['dropout'] != .1:
         raise ValueError('This release preserves history length 12 and dropout 0.1; other values require an explicit model change')
-    m = models.build(config['variant'], horizon=config['horizon'], seed=seed, width=spec['width'],
-                     rank=spec['rank'], blocks=spec['blocks'], ffn_width=spec['ffn_width']).to(device)
-    if config['variant'] == 'GRAPH_CONSTRAINED':
-        m.set_graph(graph_for(config, data_root, stage, verify))
-    return m
+    return GIFT(horizon=config['horizon'], seed=seed, width=spec['width'],
+                rank=spec['rank'], blocks=spec['blocks'], ffn_width=spec['ffn_width'],
+                dropout=spec['dropout']).to(device)
 
 
 def batch_payload(dataset, indices, device):
@@ -76,7 +74,7 @@ def train(config, seed, stage, data_root, output, device='cuda', source_checkpoi
         seed_all(seed + 50000, threads)
     else:
         parent = torch.load(source_checkpoint, map_location='cpu', weights_only=False)
-        for key in ('source', 'target', 'horizon', 'variant', 'model'):
+        for key in ('source', 'target', 'horizon', 'model'):
             if parent['config'][key] != config[key]:
                 raise ValueError('Source checkpoint configuration differs: ' + key)
         if parent['seed'] != seed: raise ValueError('Source checkpoint seed differs')
@@ -84,7 +82,7 @@ def train(config, seed, stage, data_root, output, device='cuda', source_checkpoi
         if short_parent and epochs is None and max_updates is None:
             raise ValueError('A formal adaptation requires a complete source checkpoint; use an explicit diagnostic budget to adapt a short run')
         m.load_state_dict(parent['model'], strict=True)
-        models.configure_policy(m, config['adaptation']['policy'], seed)
+        m.freeze_communication()
         restore_rng(parent['rng'])
     spec = config['source_training'] if source else config['adaptation']
     epochs = spec['epochs'] if epochs is None else epochs
@@ -112,7 +110,7 @@ def train(config, seed, stage, data_root, output, device='cuda', source_checkpoi
     plans = np.concatenate(plans)[:budget]
     frozen = {n: p.detach().cpu().clone() for n, p in m.named_parameters() if not p.requires_grad}
     m.train(); started = time.monotonic(); losses = []; completed = 0
-    write_json(output / 'parameter_audit.json', models.parameter_audit(m))
+    write_json(output / 'parameter_audit.json', m.parameter_audit())
     for indices in plans:
         x, y, valid_history = batch_payload(training, indices, device)
         m.history_valid_mask = valid_history
@@ -120,8 +118,7 @@ def train(config, seed, stage, data_root, output, device='cuda', source_checkpoi
         prediction = m(x)
         # The formal forecast loss is unmasked L1 in dataset-normalized coordinates.
         loss = torch.nn.functional.l1_loss(prediction, y)
-        for auxiliary in m.auxiliary_losses(x, y, valid_history).values():
-            loss = loss + config['history_auxiliary_weight'] * auxiliary
+        loss = loss + config['history_auxiliary_weight'] * m.auxiliary_loss(valid_history)
         if not torch.isfinite(loss): raise RuntimeError('Nonfinite training loss')
         loss.backward()
         norm = torch.nn.utils.clip_grad_norm_(params, spec['grad_clip'])
@@ -137,9 +134,9 @@ def train(config, seed, stage, data_root, output, device='cuda', source_checkpoi
                    stage=stage, rng=rng_state(), dataset_stats=[training.mean, training.std],
                    completed_updates=completed, formal_budget_complete=formal, data_identity=identity)
     temp = final_path.with_suffix('.tmp'); torch.save(payload, temp); temp.replace(final_path)
-    result = dict(stage=stage, seed=seed, variant=config['variant'], completed_updates=completed,
+    result = dict(stage=stage, seed=seed, completed_updates=completed,
                   prescribed_updates=prescribed, formal_budget_complete=formal, checkpoint_sha256=file_sha256(final_path),
-                  parameter_audit=models.parameter_audit(m), data_identity=identity)
+                  parameter_audit=m.parameter_audit(), data_identity=identity)
     if not source:
         result['metrics'] = evaluate(config, seed, final_path, data_root, device, verify=verify, threads=threads)
     write_json(output / ('source_result.json' if source else 'adapted_result.json'), result)
@@ -151,7 +148,7 @@ def evaluate(config, seed, checkpoint, data_root, device='cuda', verify=True, th
     seed_all(seed, threads)
     state = torch.load(checkpoint, map_location='cpu', weights_only=False)
     if state['seed'] != seed: raise ValueError('Checkpoint seed differs')
-    for key in ('source', 'target', 'horizon', 'variant', 'model'):
+    for key in ('source', 'target', 'horizon', 'model'):
         if state['config'][key] != config[key]: raise ValueError('Checkpoint configuration differs: ' + key)
     _, inputs, canonical, identity = datasets(config, data_root, 'adapt', source_stats=state['dataset_stats'], verify=verify)
     m = make_model(config, seed, device, data_root, 'adapt', verify)

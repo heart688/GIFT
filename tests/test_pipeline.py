@@ -101,8 +101,7 @@ class PipelineContracts(unittest.TestCase):
             source_state = torch.load(root / 'run/source.pt', weights_only=False)
             target_state = torch.load(root / 'run/adapted.pt', weights_only=False)
             m = engine.make_model(cfg, 0, 'cpu', root, 'adapt', False)
-            from gift.models import configure_policy
-            configure_policy(m)
+            m.freeze_communication()
             for name, parameter in m.named_parameters():
                 if not parameter.requires_grad:
                     self.assertTrue(torch.equal(source_state['model'][name], target_state['model'][name]), name)

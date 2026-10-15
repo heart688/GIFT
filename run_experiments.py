@@ -4,7 +4,6 @@ import json
 from pathlib import Path
 import subprocess
 import sys
-from gift.models import VARIANTS
 
 
 def main():
@@ -12,9 +11,6 @@ def main():
     parser.add_argument('--directions', nargs='+', default=['LA_BAY', 'BAY_LA', 'CD_SZ', 'SZ_CD'],
                         choices=['LA_BAY', 'BAY_LA', 'CD_SZ', 'SZ_CD'])
     parser.add_argument('--seeds', type=int, nargs='+', default=list(range(5)), choices=range(5))
-    parser.add_argument('--variant', choices=VARIANTS, default='GIFT_CE')
-    parser.add_argument('--policy', default='DEFAULT_CE',
-                        choices=['DEFAULT_CE', 'FULL', 'HEAD_ONLY', 'INTERACTION_ONLY', 'RESET_QK'])
     parser.add_argument('--data-root', default='data')
     parser.add_argument('--device', default='cuda')
     parser.add_argument('--output-root', default='outputs')
@@ -23,16 +19,15 @@ def main():
     root = Path(__file__).resolve().parent
     for direction in dict.fromkeys(args.directions):
         for seed in dict.fromkeys(args.seeds):
-            output = Path(args.output_root) / direction / args.variant / f'seed{seed}'
+            output = Path(args.output_root) / direction / f'seed{seed}'
             common = ['--config', str(root / 'configs' / (direction.lower() + '.json')),
-                      '--data-root', args.data_root, '--seed', str(seed), '--variant', args.variant,
+                      '--data-root', args.data_root, '--seed', str(seed),
                       '--device', args.device]
             source = output / 'source.pt'
-            target_output = output if args.policy == 'DEFAULT_CE' else output / args.policy
             commands = [(source, [sys.executable, str(root / 'train.py'), '--stage', 'pretrain',
                                   *common, '--output', str(output)]),
-                        (target_output / 'adapted.pt', [sys.executable, str(root / 'train.py'), '--stage', 'adapt',
-                                  *common, '--policy', args.policy, '--output', str(target_output),
+                        (output / 'adapted.pt', [sys.executable, str(root / 'train.py'), '--stage', 'adapt',
+                                  *common, '--output', str(output),
                                   '--source-checkpoint', str(source)])]
             for checkpoint, command in commands:
                 print(json.dumps({'checkpoint': str(checkpoint), 'argv': command}), flush=True)

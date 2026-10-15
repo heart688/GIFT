@@ -46,7 +46,7 @@ def load_city(data_root, manifest, name, verify=True):
         raise ValueError(f'{name}: data SHA differs from the reported benchmark; use --skip-data-hash only for a different dataset version')
     speed = np.asarray(raw[:, :, spec.get('speed_channel', 0)], dtype=np.float32)
     if not np.isfinite(speed).all():
-        raise ValueError('Input speed must be finite. Zero observations are retained as missing-value markers.')
+        raise ValueError('Input speed must be finite; zero observations are retained unchanged.')
     return CityData(name, speed, spec['steps_per_day'], spec['interval_minutes'], spec)
 
 
@@ -82,8 +82,7 @@ class TrafficWindows(Dataset):
         observed = self.city.speed[start:middle].copy()
         future = self.city.speed[middle:middle + self.horizon].copy()
         valid_history = (np.isfinite(observed) & (observed != 0)).T.copy()
-        # Preserve the formal three-channel tensor layout. The two placeholder
-        # channels are ignored by every released GIFT variant.
+        # Preserve the formal three-channel tensor layout; GIFT uses speed only.
         x = np.zeros((*observed.shape, 3), dtype=np.float32)
         x[..., 0] = (observed - self.mean) / self.std
         y = ((future - self.mean) / self.std).T.copy()
@@ -125,14 +124,3 @@ def datasets(config, data_root, stage, source_stats=None, verify=True):
                     source_series_sha256=source.spec['series_sha256'], target_series_sha256=target.spec['series_sha256'],
                     verified_dataset_hashes=verify)
     return training, inputs, canonical, identity
-
-
-def graph_for(config, data_root, stage, verify=True):
-    from .models import graph_from_dense
-    manifest = json.loads((Path(__file__).resolve().parents[1] / 'configs/datasets.json').read_text())
-    city = config['source'] if stage == 'pretrain' else config['target']
-    spec = manifest['cities'][city]
-    path = Path(data_root) / spec['graph_file']
-    if verify and file_sha256(path) != spec['graph_sha256']:
-        raise ValueError('Road graph SHA differs from the formal benchmark')
-    return graph_from_dense(np.load(path, allow_pickle=False), {'city': city, 'orientation': 'receiver_row_sender_column'})
