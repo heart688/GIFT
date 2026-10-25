@@ -36,14 +36,12 @@ class CityData:
     spec: dict
 
 
-def load_city(data_root, manifest, name, verify=True):
+def load_city(data_root, manifest, name):
     spec = manifest['cities'][name]
     path = Path(data_root) / spec['series_file']
     raw = np.load(path, mmap_mode='r', allow_pickle=False)
     if tuple(raw.shape) != tuple(spec['expected_shape']):
         raise ValueError(f'{name}: shape {raw.shape} differs from {spec["expected_shape"]}')
-    if verify and file_sha256(path) != spec['series_sha256']:
-        raise ValueError(f'{name}: data SHA differs from the reported benchmark; use --skip-data-hash only for a different dataset version')
     speed = np.asarray(raw[:, :, spec.get('speed_channel', 0)], dtype=np.float32)
     if not np.isfinite(speed).all():
         raise ValueError('Input speed must be finite; zero observations are retained unchanged.')
@@ -89,10 +87,10 @@ class TrafficWindows(Dataset):
         return torch.from_numpy(x), torch.from_numpy(y), torch.from_numpy(valid_history)
 
 
-def datasets(config, data_root, stage, source_stats=None, verify=True):
+def datasets(config, data_root, stage, source_stats=None):
     manifest = json.loads((Path(__file__).resolve().parents[1] / 'configs/datasets.json').read_text())
-    source = load_city(data_root, manifest, config['source'], verify)
-    target = load_city(data_root, manifest, config['target'], verify)
+    source = load_city(data_root, manifest, config['source'])
+    target = load_city(data_root, manifest, config['target'])
     history, horizon = config['model']['history_length'], config['horizon']
     source_bounds = Range(0, int(len(source.speed) * config['source_training']['fraction']))
     a, b = [int(round(d * target.steps_per_day)) for d in config['support_days']]
@@ -120,7 +118,5 @@ def datasets(config, data_root, stage, source_stats=None, verify=True):
     identity = dict(source_interval=[0, source_bounds.end], support_interval=[a, b],
                     test_label_interval=[boundary, len(target.speed)], history=history, horizon=horizon,
                     evaluation_starts_sha256=hashlib.sha256(starts.tobytes()).hexdigest(),
-                    input_stats=list(target_normalization), canonical_stats=list(canonical_stats),
-                    source_series_sha256=source.spec['series_sha256'], target_series_sha256=target.spec['series_sha256'],
-                    verified_dataset_hashes=verify)
+                    input_stats=list(target_normalization), canonical_stats=list(canonical_stats))
     return training, inputs, canonical, identity

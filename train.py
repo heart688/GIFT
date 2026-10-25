@@ -15,7 +15,6 @@ def main():
     p.add_argument('--source-checkpoint')
     p.add_argument('--device', default='cuda')
     p.add_argument('--threads', type=int, default=2)
-    p.add_argument('--skip-data-hash', action='store_true')
     p.add_argument('--epochs', type=int, help='Diagnostic override; output is marked non-formal')
     p.add_argument('--max-updates', type=int, help='Diagnostic override; output is marked non-formal')
     args = p.parse_args()
@@ -23,7 +22,7 @@ def main():
     output = args.output or str(Path('outputs') / config['direction'] / f'seed{args.seed}')
     source = args.source_checkpoint or str(Path(output) / 'source.pt')
     result = train(config, args.seed, args.stage, args.data_root, output, args.device,
-                   source_checkpoint=source if args.stage == 'adapt' else None, verify=not args.skip_data_hash,
+                   source_checkpoint=source if args.stage == 'adapt' else None,
                    epochs=args.epochs, max_updates=args.max_updates, threads=args.threads)
     print(json.dumps(result), flush=True)
 

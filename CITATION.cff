@@ -1,9 +1,9 @@
 cff-version: 1.2.0
 message: "Please cite this software and the GIFT paper when bibliographic details become available."
-title: "GIFT reproducibility code"
+title: "GIFT: Graph-Free Interaction for Few-Shot Traffic Forecasting Across Cities"
 type: software
 authors:
   - name: "GIFT contributors"
-version: 0.1.0
-date-released: 2026-10-08
+version: 0.1.1
+date-released: 2026-10-25
 license: MIT

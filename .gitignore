@@ -5,6 +5,8 @@ venv/
 .DS_Store
 data/
 outputs/
+results/
+evaluation.json
 *.pt
 *.pth
 *.ckpt

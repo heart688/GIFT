@@ -31,7 +31,7 @@ def main():
     destination = Path(args.output); destination.parent.mkdir(parents=True, exist_ok=True)
     if destination.exists(): raise FileExistsError(destination)
     np.save(destination, output)
-    print(f'Saved {output.shape} float32. Check the benchmark manifest SHA before claiming the reported protocol.')
+    print(f'Saved {output.shape} float32. Set the matching file path and shape in configs/datasets.json.')
 
 
 if __name__ == '__main__': main()

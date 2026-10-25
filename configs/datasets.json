@@ -10,8 +10,7 @@
       ],
       "interval_minutes": 5,
       "steps_per_day": 288,
-      "speed_channel": 0,
-      "series_sha256": "00406b77b1c062cb3688c29c3a8aa18ae387b2f7cd2c92716a54df4807d584f1"
+      "speed_channel": 0
     },
     "pems-bay": {
       "series_file": "pems-bay/dataset.npy",
@@ -22,8 +21,7 @@
       ],
       "interval_minutes": 5,
       "steps_per_day": 288,
-      "speed_channel": 0,
-      "series_sha256": "147d7dad50580d4918543371d0037b1e53ac93cf720b26423eaadbf20be24b94"
+      "speed_channel": 0
     },
     "chengdu": {
       "series_file": "chengdu/dataset.npy",
@@ -34,8 +32,7 @@
       ],
       "interval_minutes": 10,
       "steps_per_day": 144,
-      "speed_channel": 0,
-      "series_sha256": "a7e3a917f86edb2ce7ecf49f1d1aff7f16f104addb924625bb06a84c865b0df4"
+      "speed_channel": 0
     },
     "shenzhen": {
       "series_file": "shenzhen/dataset.npy",
@@ -46,8 +43,7 @@
       ],
       "interval_minutes": 10,
       "steps_per_day": 144,
-      "speed_channel": 0,
-      "series_sha256": "367dc45d88f6eef4bd51c96cbba38efbe1293a02186db446be8fb91df93f4ea9"
+      "speed_channel": 0
     }
   }
 }

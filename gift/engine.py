@@ -42,7 +42,7 @@ def restore_rng(state):
     if torch.cuda.is_available() and state['cuda']: torch.cuda.set_rng_state_all(state['cuda'])
 
 
-def make_model(config, seed, device, data_root=None, stage=None, verify=True):
+def make_model(config, seed, device):
     spec = config['model']
     if spec['history_length'] != 12 or spec['dropout'] != .1:
         raise ValueError('This release preserves history length 12 and dropout 0.1; other values require an explicit model change')
@@ -57,7 +57,7 @@ def batch_payload(dataset, indices, device):
 
 
 def train(config, seed, stage, data_root, output, device='cuda', source_checkpoint=None,
-          verify=True, epochs=None, max_updates=None, threads=2):
+          epochs=None, max_updates=None, threads=2):
     output = Path(output); output.mkdir(parents=True, exist_ok=True)
     source = stage == 'pretrain'
     if not source and not source_checkpoint:
@@ -66,10 +66,10 @@ def train(config, seed, stage, data_root, output, device='cuda', source_checkpoi
     if final_path.exists():
         raise FileExistsError(f'Checkpoint already exists: {final_path}; choose another output directory')
     seed_all(seed, threads)
-    training, _, _, identity = datasets(config, data_root, stage, verify=verify)
+    training, _, _, identity = datasets(config, data_root, stage)
     if training is None:
         raise ValueError('Training requires a nonempty support interval')
-    m = make_model(config, seed, device, data_root, stage, verify)
+    m = make_model(config, seed, device)
     if source:
         seed_all(seed + 50000, threads)
     else:
@@ -90,7 +90,7 @@ def train(config, seed, stage, data_root, output, device='cuda', source_checkpoi
     epoch_steps = len(training) // batch_size
     if epoch_steps == 0 or epochs <= 0: raise ValueError('Not enough windows for one training batch')
     prescribed = spec['epochs'] * epoch_steps
-    if verify and prescribed != config['source_updates' if source else 'target_updates']:
+    if prescribed != config['source_updates' if source else 'target_updates']:
         raise ValueError('Dataset windows do not reproduce the configured formal update budget')
     budget = epochs * epoch_steps
     if max_updates is not None:
@@ -138,20 +138,20 @@ def train(config, seed, stage, data_root, output, device='cuda', source_checkpoi
                   prescribed_updates=prescribed, formal_budget_complete=formal, checkpoint_sha256=file_sha256(final_path),
                   parameter_audit=m.parameter_audit(), data_identity=identity)
     if not source:
-        result['metrics'] = evaluate(config, seed, final_path, data_root, device, verify=verify, threads=threads)
+        result['metrics'] = evaluate(config, seed, final_path, data_root, device, threads=threads)
     write_json(output / ('source_result.json' if source else 'adapted_result.json'), result)
     return result
 
 
 @torch.no_grad()
-def evaluate(config, seed, checkpoint, data_root, device='cuda', verify=True, threads=2, save_predictions=None):
+def evaluate(config, seed, checkpoint, data_root, device='cuda', threads=2, save_predictions=None):
     seed_all(seed, threads)
     state = torch.load(checkpoint, map_location='cpu', weights_only=False)
     if state['seed'] != seed: raise ValueError('Checkpoint seed differs')
     for key in ('source', 'target', 'horizon', 'model'):
         if state['config'][key] != config[key]: raise ValueError('Checkpoint configuration differs: ' + key)
-    _, inputs, canonical, identity = datasets(config, data_root, 'adapt', source_stats=state['dataset_stats'], verify=verify)
-    m = make_model(config, seed, device, data_root, 'adapt', verify)
+    _, inputs, canonical, identity = datasets(config, data_root, 'adapt', source_stats=state['dataset_stats'])
+    m = make_model(config, seed, device)
     m.load_state_dict(state['model'], strict=True); m.eval()
     acc = MetricAccumulator(config['horizon'])
     predictions = None

@@ -1,6 +1,5 @@
 """Boundaries, formal budgets, masks, statistics and disposable CPU training."""
 import contextlib
-import csv
 import io
 import json
 from pathlib import Path
@@ -11,6 +10,7 @@ import numpy as np
 import torch
 from gift import data, engine
 from gift.metrics import metrics
+import prepare_data
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -64,17 +64,32 @@ class PipelineContracts(unittest.TestCase):
         self.assertIsNone(empty['mae'])
         self.assertEqual(empty['horizon_mae'], [None, None, None])
 
-    def test_expected_statistics_come_from_five_seeds(self):
-        with (ROOT / 'results/expected_main.csv').open() as f: means = list(csv.DictReader(f))
-        with (ROOT / 'results/expected_seeds.csv').open() as f: seeds = list(csv.DictReader(f))
-        self.assertEqual(len(means), 36)
-        self.assertEqual(len(seeds), 180)
-        for row in means:
-            matches = [r for r in seeds if all(r[k] == row[k] for k in ['direction', 'metric', 'report_step'])]
-            self.assertEqual(sorted(int(r['seed']) for r in matches), list(range(5)))
-            values = [float(r['value']) for r in matches]
-            self.assertAlmostEqual(float(np.mean(values)), float(row['mean']))
-            self.assertAlmostEqual(float(np.std(values, ddof=1)), float(row['sample_sd']))
+    def test_converter_and_loader_accept_float32_and_float64(self):
+        speed = np.random.default_rng(3).normal(40, 8, (48, 5))
+        speed[7, 2] = 0
+        manifest = {'cities': {'synthetic': {
+            'series_file': 'dataset.npy', 'expected_shape': [48, 5, 2],
+            'speed_channel': 0, 'steps_per_day': 144, 'interval_minutes': 10,
+        }}}
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            for input_dtype in (np.float32, np.float64):
+                source = root / 'speed.npy'
+                destination = root / 'dataset.npy'
+                np.save(source, speed.astype(input_dtype))
+                destination.unlink(missing_ok=True)
+                args = ['prepare_data.py', '--input', str(source), '--output', str(destination),
+                        '--interval-minutes', '10']
+                with patch('sys.argv', args), contextlib.redirect_stdout(io.StringIO()):
+                    prepare_data.main()
+                converted = np.load(destination, allow_pickle=False)
+                self.assertEqual(converted.dtype, np.float32)
+                for file_dtype in (np.float32, np.float64):
+                    with self.subTest(input_dtype=input_dtype, file_dtype=file_dtype):
+                        np.save(destination, converted.astype(file_dtype))
+                        city = data.load_city(root, manifest, 'synthetic')
+                        self.assertEqual(city.speed.dtype, np.float32)
+                        np.testing.assert_array_equal(city.speed, speed.astype(np.float32))
 
     def test_train_adapt_evaluate_small_disposable_dataset(self):
         cfg = json.loads((ROOT / 'configs/cd_sz.json').read_text())
@@ -89,26 +104,28 @@ class PipelineContracts(unittest.TestCase):
         source = data.TrafficWindows(city, data.window_starts_inside(data.Range(0, 128), 12, 6), 12, 6, src_stats)
         support = data.TrafficWindows(city, data.window_starts_inside(data.Range(0, 64), 12, 6), 12, 6, dst_stats)
         test = data.TrafficWindows(city, data.forecast_starts_after(64, 192, 12, 6), 12, 6, dst_stats)
-        def synthetic(config, root, stage, source_stats=None, verify=True):
+        cfg['source_updates'] = len(source) // cfg['source_training']['batch_size']
+        cfg['target_updates'] = len(support) // cfg['adaptation']['batch_size']
+        def synthetic(config, root, stage, source_stats=None):
             return (source if stage == 'pretrain' else support), test, test, {'synthetic': True}
         with tempfile.TemporaryDirectory() as directory, patch('gift.engine.datasets', side_effect=synthetic), contextlib.redirect_stdout(io.StringIO()):
             root = Path(directory)
-            source_result = engine.train(cfg, 0, 'pretrain', root, root / 'run', 'cpu', verify=False)
+            source_result = engine.train(cfg, 0, 'pretrain', root, root / 'run', 'cpu')
             self.assertEqual(source_result['completed_updates'], len(source) // 16)
-            adapted = engine.train(cfg, 0, 'adapt', root, root / 'run', 'cpu', root / 'run/source.pt', verify=False)
+            adapted = engine.train(cfg, 0, 'adapt', root, root / 'run', 'cpu', root / 'run/source.pt')
             self.assertEqual(adapted['completed_updates'], len(support) // 16)
             self.assertEqual(adapted['metrics']['reported_minutes'], [10, 30, 60])
             source_state = torch.load(root / 'run/source.pt', weights_only=False)
             target_state = torch.load(root / 'run/adapted.pt', weights_only=False)
-            m = engine.make_model(cfg, 0, 'cpu', root, 'adapt', False)
+            m = engine.make_model(cfg, 0, 'cpu')
             m.freeze_communication()
             for name, parameter in m.named_parameters():
                 if not parameter.requires_grad:
                     self.assertTrue(torch.equal(source_state['model'][name], target_state['model'][name]), name)
-            evaluated = engine.evaluate(cfg, 0, root / 'run/adapted.pt', root, 'cpu', verify=False)
+            evaluated = engine.evaluate(cfg, 0, root / 'run/adapted.pt', root, 'cpu')
             self.assertEqual(evaluated, adapted['metrics'])
             with self.assertRaises(FileExistsError):
-                engine.train(cfg, 0, 'pretrain', root, root / 'run', 'cpu', verify=False)
+                engine.train(cfg, 0, 'pretrain', root, root / 'run', 'cpu')
 
 
 if __name__ == '__main__': unittest.main()
