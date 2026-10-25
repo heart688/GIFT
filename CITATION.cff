@@ -1,9 +1,9 @@
 cff-version: 1.2.0
-message: "Please cite this software and the GIFT paper when bibliographic details become available."
+message: "Author information is withheld for double-anonymous review. Please cite the accompanying paper after the review period."
 title: "GIFT: Graph-Free Interaction for Few-Shot Traffic Forecasting Across Cities"
 type: software
 authors:
-  - name: "GIFT contributors"
+  - name: "Anonymous Authors"
 version: 0.1.1
 date-released: 2026-10-25
 license: MIT

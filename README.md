@@ -2,6 +2,8 @@
 
 **Graph-Free Interaction for Few-Shot Traffic Forecasting Across Cities**
 
+Anonymous code release for double-anonymous peer review. Author information is withheld during review.
+
 This repository provides the **main GIFT model**, with source training, target adaptation, and evaluation. TIDE encodes local history and recent deviations; SIDE uses traffic-state features to exchange information between sensors through a compact positive kernel. No road graph or cross-city sensor alignment is required.
 
 ## Repository
@@ -22,6 +24,8 @@ run_experiments.py    # run selected directions and seeds
 ## Quick start
 
 Use Python 3.10 and PyTorch 2.1.2. The tests also run on CPU.
+
+Download the review ZIP from the anonymous code page and run the commands below from the extracted repository directory.
 
 ```bash
 python -m venv .venv
