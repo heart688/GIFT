@@ -35,7 +35,7 @@ Get the datasets as described below, then run one source-to-target transfer:
 ```bash
 python train.py --stage pretrain --config configs/la_bay.json --data-root data --seed 0
 python train.py --stage adapt --config configs/la_bay.json --data-root data --seed 0
-python evaluate.py --checkpoint outputs/LA_BAY/seed0/adapted.pt --data-root data
+python evaluate.py --checkpoint outputs/LA_BAY/seed0/adapted.pt --data-root data --output outputs/LA_BAY/seed0/evaluation.json
 ```
 
 The commands save checkpoints and evaluation results under `outputs/LA_BAY/seed0/`. Add `--device cpu` to run on CPU. Existing checkpoints are never overwritten.
@@ -75,7 +75,7 @@ The four configurations cover METR-LA ↔ PEMS-BAY and Chengdu ↔ Shenzhen. All
 
 GIFT uses width 128, kernel rank 16, three blocks, and batch size 16. Source training runs for 100 epochs on the first 70% of source observations. Target adaptation runs for 50 epochs on the first two target days, with communication projections and scalar gates frozen. AdamW uses learning rates `1e-3` and `1e-4`, respectively. The objective is forecast L1 plus `0.1 ×` the observed-history prediction loss.
 
-Evaluation scores labels after the first two target days. MAE, MAPE, and RMSE use physical units and finite, nonzero target labels; MAPE has a `1e-5` denominator floor. Results include forecast steps 1, 3, and 6.
+Evaluation scores labels after the first two target days, restoring predictions and labels to the original speed scale. MAE and RMSE use speed units; MAPE is reported as a percentage with a `1e-5` denominator floor. Metrics retain finite, nonzero target labels. Results include forecast steps 1, 3, and 6.
 
 For a short pipeline check, pass `--max-updates 2` at both training stages with a separate `--output` directory.
 
